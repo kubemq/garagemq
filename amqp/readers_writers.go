@@ -16,6 +16,7 @@ var emptyBufferPool = pool.NewBufferPool(0)
 // 14 bytes for class-id | weight | body size | property flags
 var headerBufferPool = pool.NewBufferPool(14)
 
+// AmqpHeader standard AMQP header
 var AmqpHeader = []byte{'A', 'M', 'Q', 'P', 0, 0, 9, 1}
 
 // supported protocol identifiers
@@ -23,6 +24,11 @@ const (
 	Proto091    = "amqp-0-9-1"
 	ProtoRabbit = "amqp-rabbit"
 )
+
+func writeSlice(wr io.Writer, data []byte) error {
+	_, err := wr.Write(data[:])
+	return err
+}
 
 /*
 ReadFrame reads and parses raw data from conn reader and returns amqp frame
@@ -108,11 +114,7 @@ func ReadOctet(r io.Reader) (data byte, err error) {
 func WriteOctet(wr io.Writer, data byte) error {
 	var b [1]byte
 	b[0] = data
-	_, err := wr.Write(b[:])
-	if err != nil {
-		return err
-	}
-	return nil
+	return writeSlice(wr, b[:])
 }
 
 // ReadShort reads 2 bytes
@@ -123,7 +125,9 @@ func ReadShort(r io.Reader) (data uint16, err error) {
 
 // WriteShort writes 2 bytes
 func WriteShort(wr io.Writer, data uint16) error {
-	return binary.Write(wr, binary.BigEndian, &data)
+	var b [2]byte
+	binary.BigEndian.PutUint16(b[:], data)
+	return writeSlice(wr, b[:])
 }
 
 // ReadLong reads 4 bytes
@@ -134,7 +138,9 @@ func ReadLong(r io.Reader) (data uint32, err error) {
 
 // WriteLong writes 4 bytes
 func WriteLong(wr io.Writer, data uint32) error {
-	return binary.Write(wr, binary.BigEndian, &data)
+	var b [4]byte
+	binary.BigEndian.PutUint32(b[:], data)
+	return writeSlice(wr, b[:])
 }
 
 // ReadLonglong reads 8 bytes
@@ -145,7 +151,9 @@ func ReadLonglong(r io.Reader) (data uint64, err error) {
 
 // WriteLonglong writes 8 bytes
 func WriteLonglong(wr io.Writer, data uint64) error {
-	return binary.Write(wr, binary.BigEndian, &data)
+	var b [8]byte
+	binary.BigEndian.PutUint64(b[:], data)
+	return writeSlice(wr, b[:])
 }
 
 // ReadTimestamp reads timestamp
@@ -160,7 +168,7 @@ func ReadTimestamp(r io.Reader) (data time.Time, err error) {
 
 // WriteTimestamp writes timestamp
 func WriteTimestamp(wr io.Writer, data time.Time) error {
-	return binary.Write(wr, binary.BigEndian, uint64(data.Unix()))
+	return WriteLonglong(wr, uint64(data.Unix()))
 }
 
 // ReadShortstr reads string
@@ -215,11 +223,11 @@ func ReadLongstr(r io.Reader) (data []byte, err error) {
 
 // WriteLongstr writes long string
 func WriteLongstr(wr io.Writer, data []byte) error {
-	err := binary.Write(wr, binary.BigEndian, uint32(len(data)))
+	err := WriteLong(wr, uint32(len(data)))
 	if err != nil {
 		return err
 	}
-	_, err = wr.Write([]byte(data))
+	_, err = wr.Write(data)
 	if err != nil {
 		return err
 	}
@@ -546,7 +554,7 @@ func writeV(writer io.Writer, v interface{}, protoVersion string) (err error) {
 		return writeValueRabbit(writer, v)
 	}
 
-	return fmt.Errorf("Unknown proto version [%s]", protoVersion)
+	return fmt.Errorf("unknown proto version [%s]", protoVersion)
 }
 
 /*
@@ -816,7 +824,9 @@ func ReadContentHeader(r io.Reader, protoVersion string) (*ContentHeader, error)
 	if _, err = io.ReadFull(r, header[:]); err != nil {
 		return nil, err
 	}
-	headerBuf.Write(header[:])
+	if _, err = headerBuf.Write(header[:]); err != nil {
+		return nil, err
+	}
 
 	contentHeader := &ContentHeader{}
 

@@ -5,18 +5,30 @@
   "dependencies": {
     "@material-ui/core": "^1.5.1",
     "@material-ui/icons": "^2.0.3",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "moments": "^0.0.2",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4",
     "react-router-dom": "^4.3.1",
-    "react-scripts": "1.1.5",
-    "recharts": "^1.1.0"
+    "react-scripts": "^3.0.1",
+    "recharts": "^1.6.2"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

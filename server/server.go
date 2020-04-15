@@ -17,12 +17,9 @@ import (
 	"github.com/valinurovam/garagemq/interfaces"
 	"github.com/valinurovam/garagemq/metrics"
 	"github.com/valinurovam/garagemq/msgstorage"
-	"github.com/valinurovam/garagemq/pool"
 	"github.com/valinurovam/garagemq/srvstorage"
 	"github.com/valinurovam/garagemq/storage"
 )
-
-var emptyBufferPool = pool.NewBufferPool(0)
 
 type ServerState int
 
@@ -175,6 +172,8 @@ func (srv *Server) listen() {
 	log.WithFields(log.Fields{
 		"address": address,
 	}).Info("Server started")
+
+	daemonReady()
 
 	for {
 		conn, err := srv.listener.AcceptTCP()
